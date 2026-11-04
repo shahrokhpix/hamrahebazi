@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #3f348f;
+  --color-on-primary: #ffffff;
+  --color-accent: #ffbc58;
+  --color-on-accent: #1c2430;
+  --color-sun: #ffbc58;
+  --color-coral: #ff8daa;
+  --color-leaf: #77ddc1;
+  --color-grape: #7968e8;
+  --color-sky: #86c9ff;
+  --color-background: #fff6e9;
+  --color-ink: #1c2430;
+  --color-foreground: #1c2430;
+  --color-card: #ffffff;
+  --color-muted: #3e4a5c;
+  --color-line: #1c2430;
+  --color-danger: #b42318;
+  --font-sans: var(--font-body), sans-serif;
+  --font-display: var(--font-lalezar), var(--font-body), sans-serif;
+}
+
+body {
+  overflow-x: clip;
+  background:
+    radial-gradient(circle at 12% 8%, #ffe08a 0 18%, transparent 19%),
+    radial-gradient(circle at 90% 0%, #ffd0d6 0 16%, transparent 17%),
+    radial-gradient(circle at 80% 80%, #c9ecff 0 14%, transparent 15%),
+    var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans), sans-serif;
+}
+
+h1,
+h2,
+.font-display {
+  font-family: var(--font-display), var(--font-body), sans-serif;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .float-soft {
+    animation: float-soft 5s ease-in-out infinite;
+  }
+}
+
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

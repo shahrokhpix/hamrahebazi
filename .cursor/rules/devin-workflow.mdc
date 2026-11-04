@@ -1,0 +1,16 @@
+---
+description: Devin planning workflow without overriding Cursor tools
+alwaysApply: true
+---
+
+# Devin workflow
+
+Upstream files live at the repo root: `.cursorrules`, `tools/`, `requirements.txt`, `tests/`, `scratchpad.md`, `.env.example`. The Python env is `./venv`.
+
+On Windows run tools with `venv\Scripts\python.exe`, not `venv/bin/python3`.
+
+- Plan in `scratchpad.md` and record new lessons there.
+- Do not rewrite `.cursorrules` while implementing product work.
+- Cursor's own tools take priority over `tools/*.py`. Use the Python scripts only when those tools cannot do the job.
+- Commit messages follow the user's git rule. Do not force a `[Cursor]` prefix.
+- API keys in `.env` are optional. Never commit `.env`.

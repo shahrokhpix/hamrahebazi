@@ -1,0 +1,322 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id            String          @id @default(cuid())
+  phone         String          @unique
+  role          String          @default("player")
+  createdAt     DateTime        @default(now())
+  profiles      PlayerProfile[]
+  host          Host?
+  organizer     Organizer?
+  ledger        LedgerEntry[]
+  notifications Notification[]
+  tickets       SupportTicket[]
+  authSessions  AuthSession[]
+  verificationRequests VerificationRequest[]
+  pointEntries  PointEntry[]
+  shopOrders    ShopOrder[]
+}
+
+model VerificationRequest {
+  id          String   @id @default(cuid())
+  accountId   String
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  kind        String
+  status      String
+  displayName String
+  address     String   @default("")
+  latitude    Float?
+  longitude   Float?
+  reply       String   @default("")
+  imagePath   String   @default("")
+  createdAt   DateTime @default(now())
+
+  @@unique([accountId, kind])
+}
+
+model AuthSession {
+  token     String   @id
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+}
+
+model OtpChallenge {
+  id         String    @id @default(cuid())
+  phone      String
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int       @default(0)
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone, createdAt])
+}
+
+model PointEntry {
+  id        String   @id @default(cuid())
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  amount    Int
+  kind      String
+  sourceKey String   @unique
+  note      String   @default("")
+  createdAt DateTime @default(now())
+}
+
+model PeerRank {
+  id            String        @id @default(cuid())
+  sessionId     String
+  session       Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  fromProfileId String
+  fromProfile   PlayerProfile @relation("ranksGiven", fields: [fromProfileId], references: [id], onDelete: Cascade)
+  toProfileId   String
+  toProfile     PlayerProfile @relation("ranksReceived", fields: [toProfileId], references: [id], onDelete: Cascade)
+  stars         Int
+  createdAt     DateTime      @default(now())
+
+  @@unique([sessionId, fromProfileId, toProfileId])
+}
+
+model ShopProduct {
+  id          String      @id @default(cuid())
+  name        String
+  kind        String
+  description String
+  pointCost   Int
+  stock       Int
+  imagePath   String      @default("")
+  orders      ShopOrder[]
+}
+
+model ShopOrder {
+  id        String      @id @default(cuid())
+  accountId String
+  account   Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  productId String
+  product   ShopProduct @relation(fields: [productId], references: [id])
+  points    Int
+  status    String
+  createdAt DateTime    @default(now())
+}
+
+model PlayerProfile {
+  id              String           @id @default(cuid())
+  accountId       String           @unique
+  account         Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  displayName     String
+  publicId        String           @unique
+  birthDate       DateTime
+  gender          String
+  schoolName      String?
+  tickStatus      String           @default("none")
+  avatarPath      String           @default("")
+  bookings        Booking[]
+  tickSubmissions TickSubmission[]
+  ranksGiven      PeerRank[]       @relation("ranksGiven")
+  ranksReceived   PeerRank[]       @relation("ranksReceived")
+}
+
+model TickSubmission {
+  id        String        @id @default(cuid())
+  profileId String
+  profile   PlayerProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  status    String
+  note      String        @default("")
+  reply     String        @default("")
+  createdAt DateTime      @default(now())
+  files     TickFile[]
+}
+
+model TickFile {
+  id           String         @id @default(cuid())
+  submissionId String
+  submission   TickSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  kind         String
+  storedName   String
+  originalName String
+  mime         String
+}
+
+model Host {
+  id          String  @id @default(cuid())
+  accountId   String  @unique
+  account     Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  status      String
+  displayName String
+  address     String
+  latitude         Float?
+  longitude        Float?
+  imagePath        String  @default("")
+  pendingImagePath String  @default("")
+  tables           Table[]
+}
+
+model Table {
+  id       String @id @default(cuid())
+  hostId   String
+  host     Host   @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  name     String
+  capacity Int
+  slots    Slot[]
+}
+
+model Slot {
+  id               String    @id @default(cuid())
+  tableId          String
+  table            Table     @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  startsAt         DateTime
+  endsAt           DateTime
+  currentSessionId String?   @unique
+  sessions         Session[]
+}
+
+model Game {
+  id              String    @id @default(cuid())
+  name            String
+  ageMin          Int
+  ageMax          Int?
+  difficulty      String
+  durationMinutes Int
+  minPlayers      Int
+  maxPlayers      Int
+  imagePath        String    @default("")
+  pendingImagePath String    @default("")
+  sessions        Session[]
+}
+
+model Organizer {
+  id          String    @id @default(cuid())
+  accountId   String    @unique
+  account     Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  displayName String
+  phone       String
+  sessions    Session[]
+}
+
+model Session {
+  id               String         @id @default(cuid())
+  gameId           String
+  game             Game           @relation(fields: [gameId], references: [id])
+  slotId           String
+  slot             Slot           @relation(fields: [slotId], references: [id])
+  organizerId      String
+  organizer        Organizer      @relation(fields: [organizerId], references: [id])
+  kind             String
+  minPlayers       Int
+  maxPlayers       Int
+  priceRial        Int
+  genderConstraint String?
+  status           String
+  reservedCount    Int            @default(0)
+  cancelReason     String?
+  bookings         Booking[]
+  notifications    Notification[]
+  tickets          SupportTicket[]
+  peerRanks        PeerRank[]
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  sessionId       String
+  session         Session       @relation(fields: [sessionId], references: [id])
+  playerProfileId String
+  playerProfile   PlayerProfile @relation(fields: [playerProfileId], references: [id])
+  accountId       String
+  status          String
+  amountRial      Int
+  holdExpiresAt   DateTime?
+  attendanceCode  String?
+  activeKey       String?       @unique
+  gatewayAuthority String?      @unique
+  createdAt       DateTime      @default(now())
+  ledger          LedgerEntry[]
+  tickets         SupportTicket[]
+}
+
+model LedgerEntry {
+  id         String   @id @default(cuid())
+  accountId  String
+  account    Account  @relation(fields: [accountId], references: [id])
+  bookingId  String?
+  booking    Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  type       String
+  amountRial Int
+  createdAt  DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id])
+  sessionId String?
+  session   Session? @relation(fields: [sessionId], references: [id])
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model SupportTicket {
+  id        String   @id @default(cuid())
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id])
+  sessionId String
+  session   Session  @relation(fields: [sessionId], references: [id])
+  bookingId String
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  reason    String
+  status    String   @default("open")
+  reply     String   @default("")
+  createdAt DateTime @default(now())
+}
+
+model SiteContent {
+  id        String   @id @default("site")
+  logoPath  String   @default("")
+  heroImage String   @default("/art/hero-play.jpg")
+  howImage  String   @default("/art/cafe-table.jpg")
+  copy      String   @default("")
+  updatedAt DateTime @updatedAt
+}
+
+model Article {
+  id        String   @id @default(cuid())
+  title     String
+  excerpt   String
+  body      String
+  imagePath String   @default("")
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  body      String
+  status    String   @default("open")
+  reply     String   @default("")
+  createdAt DateTime @default(now())
+}
+
+model Integration {
+  id                 String   @id @default("site")
+  kavenegarApiKey    String   @default("")
+  kavenegarSender    String   @default("")
+  kavenegarTemplate  String   @default("")
+  zarinpalMerchantId String   @default("")
+  zarinpalSandbox    Boolean  @default(false)
+  enamadImage        String   @default("")
+  enamadLink         String   @default("")
+  contactPhone       String   @default("")
+  contactEmail       String   @default("")
+  contactAddress     String   @default("")
+  updatedAt          DateTime @updatedAt
+}
